@@ -1,65 +1,81 @@
+import sys
+import sqlite3
+
 class LootBag():
-  '''This class provides the ability to add and
-  remove items from a collection of toys to be
-  delivered to children'''
 
-  def add(self, child, toy):
-    '''Append the toy to the list of existing toys for the
-    specified child'''
-    kids = set()
-    kids.add(child)
+    def __init__(self):
+        self.good_children = dict()
 
-    with open("{}.txt".format(child), "a+") as child_toys:
-      child_toys.write(toy+"\n")
+    def add_toy_for_child(self, child, toy):
 
-    try:
-      with open("good_children.txt", "r") as good_kids:
-        [ kids.add(k[:-1]) for k in good_kids ]
+        with sqlite3.connect('lootbag.db') as conn:
+            c = conn.cursor()
 
-    except FileNotFoundError:
-      print("No good children yet")
+            try:
+                c.execute("INSERT INTO Child VALUES (?, ?, ?)",
+                    (None, child, 0))
+            except sqlite3.OperationalError:
+                pass
 
-    with open("good_children.txt", "w+") as good_kids:
-      [good_kids.write(kid+"\n") for kid in kids]
+            c.execute("SELECT ChildId FROM Child WHERE Name='{}'".format(child))
+            results = c.fetchall()
 
-  def remove(self, child, toy):
-    '''Remove the toy from the specified child's existing list
-    of toys'''
-    with open("{}.txt".format(child), "r") as child_toys:
-      toys = [ toy[:-1] for toy in child_toys ]
+            try:
+                c.execute("INSERT INTO Toy VALUES (?, ?, ?)",
+                    (None, toy, results[0][0]))
+            except sqlite3.OperationalError:
+                pass
 
-    toys.remove(toy)
+    def remove_toy_for_child(self, child, toy):
+        with sqlite3.connect('lootbag.db') as conn:
+            c = conn.cursor()
 
-    with open("{}.txt".format(child), "w") as child_toys:
-      [child_toys.write(toy+"\n") for toy in toys]
+            c.execute("SELECT ChildId FROM Child WHERE Name='{}'".format(child))
+            results = c.fetchall()
 
-    with open("{}.txt".format(child), "r") as child_toys:
-      toys = [ toy[:-1] for toy in child_toys ]
-
-    return toys
-
-  def list_good_children(self):
-    '''List all children who are getting at least one toy'''
-
-    with open("good_children.txt", "r") as good_kids:
-      list_of_kids = [k[:-1] for k in good_kids]
-
-    return list_of_kids
+            try:
+                c.execute("DELETE FROM Toy WHERE ChildId={} AND Name='{}'"
+                    .format(results[0][0], toy))
+            except sqlite3.OperationalError:
+                pass
 
 
-  def get_by_child(self, child):
-    '''List all toys for the specified child'''
+    def get_by_child(self, child):
+        with sqlite3.connect('lootbag.db') as conn:
+            c = conn.cursor()
 
-    with open("{}.txt".format(child), "r") as child_toys:
-      toys = [ toy[:-1] for toy in child_toys ]
+            c.execute("""SELECT t.Name
+                FROM Toy t, Child c
+                WHERE c.Name='{}'
+                AND c.ChildId = t.ChildId
+            """.format(child))
 
-    return toys
-
-  def toys_delivered(self, child):
-    '''Mark a child as having all their toys delivered'''
-    pass
+            toys = c.fetchall()
+            print(toys)
 
 
+    def get_list_of_kids(self):
+        return [kid for kid in self.good_children.keys()]
+
+    def is_child_happy(self, child):
+        return self.good_children[child]["delivered"]
+
+    def deliver_toys_to_child(self, child):
+        self.good_children[child]["delivered"] = True
+
+
+
+
+
+if __name__ == "__main__":
+    bag = LootBag()
+    if sys.argv[1] == "add":
+      bag.add_toy_for_child(sys.argv[3], sys.argv[2])
+      print(bag.get_by_child(sys.argv[3]))
+    elif sys.argv[1] == "remove":
+      bag.remove_toy_for_child(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == "ls":
+      bag.get_by_child(sys.argv[2])
 
 
 

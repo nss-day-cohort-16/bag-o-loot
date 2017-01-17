@@ -3,68 +3,67 @@ from lootbag import *
 
 class TestLootBag(unittest.TestCase):
 
-  def test_ToyCanBeAddedToBag(self):
+    def test_can_add_toy_for_child(self):
 
-    bag = LootBag()
-    toy = "Nerf Gun"
-    child = "Teriq"
+      bag = LootBag()
+      child = "Timothy"
+      toy = "Tonka Truck"
 
-    # Add a toy to the child's bag
-    bag.add(child, toy)
+      bag.add_toy_for_child(child, toy)
 
-    # Retrieve list of all toys for child
-    teriq_toys = bag.get_by_child(child)
+      self.assertIn(toy, bag.get_by_child(child))
 
-    self.assertIn(toy, teriq_toys)
+    def test_can_remove_toy_for_child(self):
 
-  def test_ToyCanBeRemovedFromBag(self):
-    bag = LootBag()
-    toy = "Power Ranger"
-    child = "Teriq"
+      bag = LootBag()
+      child = "Timothy"
+      toy = "Tonka Truck"
 
-    # Add a toy to the child's bag
-    bag.add(child, toy)
+      bag.add_toy_for_child(child, toy)
+      self.assertIn(toy, bag.get_by_child(child))
 
-    # Retrieve list of all toys for child
-    teriq_toys = bag.get_by_child(child)
+      bag.remove_toy_for_child(child, toy)
+      self.assertNotIn(toy, bag.get_by_child(child))
 
-    # Verify that the toy got added
-    self.assertIn(toy, teriq_toys)
+    def test_can_list_all_children_getting_a_toy(self):
 
-    # Remove toy from child's bag
-    new_toys = bag.remove(child, toy)
+      bag = LootBag()
+      bag.add_toy_for_child("Ben", "Duct Tape")
+      bag.add_toy_for_child("Drew", "Haircut accessories")
+      bag.add_toy_for_child("Trent", "Google course")
 
-    # Verify that the toy got removed
-    self.assertNotIn(toy, new_toys)
+      list_of_kids = bag.get_list_of_kids()
 
-  def test_CanListChildrenReceivingToys(self):
-    bag = LootBag()
+      self.assertIs(type(list_of_kids), list)
+      self.assertIn("Ben", list_of_kids)
+      self.assertIn("Drew", list_of_kids)
+      self.assertIn("Trent", list_of_kids)
 
-    bag.add("Abigail", "Water slide")
-    bag.add("Marcus", "Baseball glove")
-    bag.add("Sabrina", "Microscope")
-    bag.add("Tessa", "Arduino")
+    def test_list_child_toys(self):
 
-    all_good_children = bag.list_good_children()
+      bag = LootBag()
+      bag.add_toy_for_child("Trent", "Google course")
+      bag.add_toy_for_child("Trent", "Silly putty")
+      bag.add_toy_for_child("Drew", "Haircut accessories")
 
-    self.assertGreater(len(all_good_children), 0)
-    self.assertIn("Sabrina", all_good_children)
-    self.assertIn("Abigail", all_good_children)
-    self.assertIn("Marcus", all_good_children)
-    self.assertIn("Tessa", all_good_children)
+      self.assertListEqual(bag.get_by_child("Trent"), ["Google course", "Silly putty"])
 
-  def test_CanListAllToysForASingleChild(self):
-    bag = LootBag()
+    def test_toys_can_be_delivered_to_child(self):
 
-    bag.add("Abigail", "Water slide")
-    bag.add("Abigail", "Baseball glove")
-    bag.add("Abigail", "Microscope")
-    bag.add("Abigail", "Arduino")
+      bag = LootBag()
+      child = "Trent"
+      bag.add_toy_for_child(child, "Google course")
+      bag.add_toy_for_child(child, "Silly putty")
 
-    abigail_toys = bag.get_by_child("Abigail")
+      self.assertFalse(bag.is_child_happy(child))
+      bag.deliver_toys_to_child(child)
+      self.assertTrue(bag.is_child_happy(child))
 
-    self.assertGreater(len(abigail_toys), 0)
-    pass
+
+
+
+
+
 
 
 
